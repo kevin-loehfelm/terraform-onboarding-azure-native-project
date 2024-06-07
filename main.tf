@@ -1,3 +1,12 @@
+# Read Current Session Details
+data "azuread_client_config" "current" {}
+
+# Read Azure Native Applications
+data "azuread_application_published_app_ids" "well_known" {}
+data "azuread_service_principal" "msgraph" {
+  client_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+}
+
 data "tfe_organization" "this" {
   name = var.terraform_organization
 }
@@ -19,6 +28,27 @@ resource "tfe_workspace" "this" {
 resource "azuread_application" "workspace" {
   display_name = tfe_workspace.this.name
   description  = "Service Principal for TFE Workspace: ${tfe_workspace.this.name}"
+
+  required_resource_access {
+    resource_app_id = data.azuread_service_principal.msgraph.client_id
+
+    resource_access {
+      id   = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
+      type = "Role"
+    }
+  }
+}
+
+resource "azuread_service_principal" "workspace" {
+  client_id = azuread_application.workspace.client_id
+  owners    = [data.azuread_client_config.current.object_id]
+}
+
+# Grant Admin Privileges for Azure Secrets Engine SPN
+resource "azuread_app_role_assignment" "workspace" {
+  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
+  principal_object_id = azuread_service_principal.workspace.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 resource "azuread_application_federated_identity_credential" "plan" {
@@ -55,4 +85,10 @@ resource "tfe_variable" "tfc_azure_run_client_id" {
   workspace_id = tfe_workspace.this.id
 }
 
-
+resource "tfe_variable" "arm_tenant_id" {
+  key          = "ARM_TENANT_ID"
+  value        = var.tenant_id
+  category     = "env"
+  description  = "azure tenant id"
+  workspace_id = tfe_workspace.this.id
+}

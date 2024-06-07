@@ -27,3 +27,9 @@ variable "terraform_project" {
   type        = string
   description = "hcp terraform project"
 }
+
+variable "tenant_id" {
+  type        = string
+  description = "azure tenant id"
+  default     = "27113040-bd29-4848-a781-1d9d70bcf768"
+}
