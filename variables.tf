@@ -10,6 +10,7 @@ variable "tfc_vault_backed_azure_dynamic_credentials" {
       client_secret_file_path = string
     }))
   })
+  default = null
 }
 
 variable "workspace_label" {
@@ -25,5 +26,4 @@ variable "terraform_organization" {
 variable "terraform_project" {
   type        = string
   description = "hcp terraform project"
-  default     = "demo-prod"
 }
