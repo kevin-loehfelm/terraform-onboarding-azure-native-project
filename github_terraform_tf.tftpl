@@ -1,0 +1,18 @@
+terraform {
+  cloud {
+    organization = "kloehfelm-demo"
+    hostname     = "app.terraform.io" # Optional; defaults to app.terraform.io
+    workspaces {
+      project = "demo-prod"
+      name    = "tfe-workspace-app1"
+    }
+  }
+  required_providers {
+    azuread = {
+      source = "hashicorp/azuread" # Inherited from root or latest
+    }
+    azurerm = {
+      source = "hashicorp/azurerm" # Inherited from root or latest
+    }
+  }
+}

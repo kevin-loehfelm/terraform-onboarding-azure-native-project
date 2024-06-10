@@ -92,3 +92,15 @@ resource "tfe_variable" "arm_tenant_id" {
   description  = "azure tenant id"
   workspace_id = tfe_workspace.this.id
 }
+
+resource "github_repository" "workspace" {
+  name        = var.workspace_label
+
+  visibility = "private"
+
+  template {
+    owner                = "kevin-loehfelm"
+    repository           = "template-demo-workspace"
+    include_all_branches = true
+  }
+}
