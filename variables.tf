@@ -13,8 +13,10 @@ variable "tfc_vault_backed_azure_dynamic_credentials" {
   default = null
 }
 
-variable "workspace_label" {
-  type = string
+variable "azure_tenant_id" {
+  type        = string
+  description = "azure tenant id"
+  default     = "27113040-bd29-4848-a781-1d9d70bcf768"
 }
 
 variable "terraform_organization" {
@@ -23,13 +25,6 @@ variable "terraform_organization" {
   default     = "kloehfelm-demo"
 }
 
-variable "terraform_project" {
-  type        = string
-  description = "hcp terraform project"
-}
-
-variable "tenant_id" {
-  type        = string
-  description = "azure tenant id"
-  default     = "27113040-bd29-4848-a781-1d9d70bcf768"
+variable "project_name" {
+  type = string
 }

@@ -1,10 +1,10 @@
 terraform {
   cloud {
-    organization = "kloehfelm-demo"
+    organization = "${terraform_organization}"
     hostname     = "app.terraform.io" # Optional; defaults to app.terraform.io
     workspaces {
-      project = "demo-prod"
-      name    = "tfe-workspace-app1"
+      project = "${terraform_project}"
+      name    = "${terraform_workspace}"
     }
   }
   required_providers {
