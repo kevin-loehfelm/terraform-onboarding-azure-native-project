@@ -57,6 +57,69 @@ resource "github_repository_file" "readme" {
 }
 
 /**********************
+Microsoft Azure
+**********************/
+
+# Data Source(s): Current Session Details
+data "azuread_client_config" "current" {}
+
+# Data Source(s): Azure Native Applications, MSGraph
+data "azuread_application_published_app_ids" "well_known" {}
+data "azuread_service_principal" "msgraph" {
+  client_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+}
+
+# Resource(s): Azure Application for Terraform Workload Identity
+resource "azuread_application" "this" {
+  display_name = "project-${var.project_name}"
+  description  = "Service Principal for Terraform Workload Identity"
+
+  required_resource_access {
+    resource_app_id = data.azuread_service_principal.msgraph.client_id
+
+    resource_access {
+      id   = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
+      type = "Role"
+    }
+  }
+}
+
+# Resource(s): Azure Service Principal for Terraform Workload Identity
+resource "azuread_service_principal" "this" {
+  client_id = azuread_application.this.client_id
+  owners    = [data.azuread_client_config.current.object_id]
+}
+
+# Resource(s): Grant Admin Privileges for Application.Read.All Service Principal permission
+resource "azuread_app_role_assignment" "read_all" {
+  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
+  principal_object_id = azuread_service_principal.this.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+}
+
+# Resource(s): Federated Identity for workspace PLAN operations
+resource "azuread_application_federated_identity_credential" "plan" {
+  for_each       = toset(local.environments)
+  application_id = azuread_application.this.id
+  display_name   = "${each.key}-${var.project_name}-plan"
+  description    = "Federated Identity: ${tfe_workspace.this[each.key].name} PLAN"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://app.terraform.io"
+  subject        = "organization:${data.tfe_organization.this.name}:project:${data.tfe_project.this[each.key].name}:workspace:${tfe_workspace.this[each.key].name}:run_phase:plan"
+}
+
+# Resource(s): Federated Identity for workspace APPLY operations
+resource "azuread_application_federated_identity_credential" "apply" {
+  for_each       = toset(local.environments)
+  application_id = azuread_application.this.id
+  display_name   = "${each.key}-${var.project_name}-apply"
+  description    = "Federated Identity: ${tfe_workspace.this[each.key].name} APPLY"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://app.terraform.io"
+  subject        = "organization:${data.tfe_organization.this.name}:project:${data.tfe_project.this[each.key].name}:workspace:${tfe_workspace.this[each.key].name}:run_phase:apply"
+}
+
+/**********************
 HCP Terraform
 **********************/
 
@@ -124,67 +187,4 @@ resource "tfe_variable" "arm_tenant_id" {
   category     = "env"
   description  = "azure tenant id"
   workspace_id = tfe_workspace.this[each.key].id
-}
-
-/**********************
-Microsoft Azure
-**********************/
-
-# Data Source(s): Current Session Details
-data "azuread_client_config" "current" {}
-
-# Data Source(s): Azure Native Applications, MSGraph
-data "azuread_application_published_app_ids" "well_known" {}
-data "azuread_service_principal" "msgraph" {
-  client_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
-}
-
-# Resource(s): Azure Application for Terraform Workload Identity
-resource "azuread_application" "this" {
-  display_name = "tfe-workspace-${var.project_name}"
-  description  = "Service Principal for Terraform Workload Identity"
-
-  required_resource_access {
-    resource_app_id = data.azuread_service_principal.msgraph.client_id
-
-    resource_access {
-      id   = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
-      type = "Role"
-    }
-  }
-}
-
-# Resource(s): Azure Service Principal for Terraform Workload Identity
-resource "azuread_service_principal" "this" {
-  client_id = azuread_application.this.client_id
-  owners    = [data.azuread_client_config.current.object_id]
-}
-
-# Resource(s): Grant Admin Privileges for Application.Read.All Service Principal permission
-resource "azuread_app_role_assignment" "read_all" {
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
-  principal_object_id = azuread_service_principal.this.object_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
-}
-
-# Resource(s): Federated Identity for workspace PLAN operations
-resource "azuread_application_federated_identity_credential" "plan" {
-  for_each       = toset(local.environments)
-  application_id = azuread_application.this.id
-  display_name   = "${each.key}-${var.project_name}-plan"
-  description    = "Federated Identity: ${tfe_workspace.this[each.key].name} PLAN"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://app.terraform.io"
-  subject        = "organization:${data.tfe_organization.this.name}:project:${data.tfe_project.this[each.key].name}:workspace:${tfe_workspace.this[each.key].name}:run_phase:plan"
-}
-
-# Resource(s): Federated Identity for workspace APPLY operations
-resource "azuread_application_federated_identity_credential" "apply" {
-  for_each       = toset(local.environments)
-  application_id = azuread_application.this.id
-  display_name   = "${each.key}-${var.project_name}-apply"
-  description    = "Federated Identity: ${tfe_workspace.this[each.key].name} APPLY"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://app.terraform.io"
-  subject        = "organization:${data.tfe_organization.this.name}:project:${data.tfe_project.this[each.key].name}:workspace:${tfe_workspace.this[each.key].name}:run_phase:apply"
 }
