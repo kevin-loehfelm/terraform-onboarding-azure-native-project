@@ -1,0 +1,8 @@
+HTTPS: https://github.com/kevin-loehfelm/prod-project1.git
+SSH: git@github.com:kevin-loehfelm/prod-project1.git
+GitHub CLI: gh repo clone kevin-loehfelm/prod-project1
+
+value = {
+    https = github_repository.this[each.key].http_clone_url
+    ssh = github_repository.this[each.key].ssh_clone_url
+}

@@ -71,7 +71,8 @@ data "azuread_service_principal" "msgraph" {
 
 # Resource(s): Azure Application for Terraform Workload Identity
 resource "azuread_application" "this" {
-  display_name = "project-${var.project_name}"
+  for_each     = toset(local.environments)
+  display_name = "project-${each.key}-${var.project_name}"
   description  = "Service Principal for Terraform Workload Identity"
 
   required_resource_access {
@@ -86,21 +87,23 @@ resource "azuread_application" "this" {
 
 # Resource(s): Azure Service Principal for Terraform Workload Identity
 resource "azuread_service_principal" "this" {
-  client_id = azuread_application.this.client_id
+  for_each  = toset(local.environments)
+  client_id = azuread_application.this[each.key].client_id
   owners    = [data.azuread_client_config.current.object_id]
 }
 
 # Resource(s): Grant Admin Privileges for Application.Read.All Service Principal permission
 resource "azuread_app_role_assignment" "read_all" {
+  for_each            = toset(local.environments)
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
-  principal_object_id = azuread_service_principal.this.object_id
+  principal_object_id = azuread_service_principal.this[each.key].object_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 # Resource(s): Federated Identity for workspace PLAN operations
 resource "azuread_application_federated_identity_credential" "plan" {
   for_each       = toset(local.environments)
-  application_id = azuread_application.this.id
+  application_id = azuread_application.this[each.key].id
   display_name   = "${each.key}-${var.project_name}-plan"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} PLAN"
   audiences      = ["api://AzureADTokenExchange"]
@@ -111,7 +114,7 @@ resource "azuread_application_federated_identity_credential" "plan" {
 # Resource(s): Federated Identity for workspace APPLY operations
 resource "azuread_application_federated_identity_credential" "apply" {
   for_each       = toset(local.environments)
-  application_id = azuread_application.this.id
+  application_id = azuread_application.this[each.key].id
   display_name   = "${each.key}-${var.project_name}-apply"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} APPLY"
   audiences      = ["api://AzureADTokenExchange"]
@@ -173,7 +176,7 @@ resource "tfe_variable" "tfc_azure_provider_auth" {
 resource "tfe_variable" "tfc_azure_run_client_id" {
   for_each     = toset(local.environments)
   key          = "TFC_AZURE_RUN_CLIENT_ID"
-  value        = azuread_application.this.client_id
+  value        = azuread_application.this[each.key].client_id
   category     = "env"
   description  = "azure dynamic credentials client id"
   workspace_id = tfe_workspace.this[each.key].id
