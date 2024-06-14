@@ -13,6 +13,12 @@ variable "tfc_vault_backed_azure_dynamic_credentials" {
   default = null
 }
 
+variable "prefix" {
+  type        = string
+  description = "environment prefix"
+  default     = "demo"
+}
+
 variable "azure_tenant_id" {
   type        = string
   description = "azure tenant id"

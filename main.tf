@@ -132,7 +132,7 @@ data "tfe_organization" "this" {
 data "tfe_project" "this" {
   for_each     = toset(local.environments)
   organization = data.tfe_organization.this.name
-  name         = "demo-${each.key}"
+  name         = "${var.prefix}-${each.key}"
 }
 
 # Data Source(s): Terraform OAuth for GitHub
