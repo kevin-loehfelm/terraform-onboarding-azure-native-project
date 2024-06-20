@@ -1,3 +1,22 @@
+# Data Source(s): Retrieve GitHub token from Vault KVv2 secrets engine (static)
+data "vault_kv_secret_v2" "github" {
+  mount = "static" #TODO
+  name  = "github" #TODO
+}
+# Data Source(s): Retrieve Terraform token from Vault KVv2 secrets engine (static)
+# TODO: This is a workaround due to permission issues with dynamic credentials
+data "vault_kv_secret_v2" "terraform" {
+  mount = "static"    #TODO
+  name  = "terraform" #TODO
+}
+
+/*
+# Data Source(s): Retrieve HCP Terraform token from Vault TFC secrets engine (dynamic)
+data "vault_generic_secret" "terraform" {
+  path = "terraform/creds/terraform_project_onboarding" #TODO
+}
+*/
+
 /**********************
 GitHub
 **********************/
@@ -22,7 +41,7 @@ resource "github_repository_file" "configuration" {
   repository = github_repository.this[each.key].name
   branch     = each.key == "prod" ? "main" : each.key
   file       = "terraform.tf"
-  content = templatefile("./github_terraform_tf.tftpl",
+  content = templatefile("${path.module}/github_terraform_tf.tftpl",
     {
       terraform_organization : data.tfe_organization.this.name,
       terraform_project   = data.tfe_project.this[each.key].name,
@@ -41,7 +60,7 @@ resource "github_repository_file" "readme" {
   repository = github_repository.this[each.key].name
   branch     = each.key == "prod" ? "main" : each.key
   file       = "README.md"
-  content = templatefile("./github_readme_md.tftpl",
+  content = templatefile("${path.module}/github_readme_md.tftpl",
     {
       project_name = var.project_name
       environment  = each.key
