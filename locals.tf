@@ -1,3 +1,8 @@
+# Environment Details
 locals {
-  environments = compact(["prod", "dev", "stage"])
+  environments = compact([
+    "prod",
+    "dev",
+    "stage"
+  ])
 }
