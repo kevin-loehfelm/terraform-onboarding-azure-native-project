@@ -23,8 +23,7 @@ GitHub
 
 # Resource(s): GitHub Repo(s)
 resource "github_repository" "this" {
-  for_each = toset(local.environments)
-  name     = "${each.key}-${var.project_name}"
+  name = "project-${var.project_name}"
 
   visibility = "private"
 
@@ -38,7 +37,7 @@ resource "github_repository" "this" {
 # Resource(s): GitHub Repo initial configuration: terraform.tf
 resource "github_repository_file" "configuration" {
   for_each   = toset(local.environments)
-  repository = github_repository.this[each.key].name
+  repository = github_repository.this.name
   branch     = each.key == "prod" ? "main" : each.key
   file       = "terraform.tf"
   content = templatefile("${path.module}/github_terraform_tf.tftpl",
@@ -57,7 +56,7 @@ resource "github_repository_file" "configuration" {
 # Resource(s): GitHub Repo initial configuration: README.md
 resource "github_repository_file" "readme" {
   for_each   = toset(local.environments)
-  repository = github_repository.this[each.key].name
+  repository = github_repository.this.name
   branch     = each.key == "prod" ? "main" : each.key
   file       = "README.md"
   content = templatefile("${path.module}/github_readme_md.tftpl",
@@ -176,7 +175,7 @@ resource "tfe_workspace" "this" {
   ]
   vcs_repo {
     branch         = each.key == "prod" ? "main" : each.key
-    identifier     = github_repository.this[each.key].full_name
+    identifier     = github_repository.this.full_name
     oauth_token_id = data.tfe_oauth_client.this.oauth_token_id
   }
 }
