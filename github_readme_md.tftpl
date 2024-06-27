@@ -1,17 +1,58 @@
 # ${project_name}
-## Environment: ${environment}
 
-This is a sample repository for for a project. This repository is tracked in HCP Terraform at the following location:
+This VCS repository is configured with HCP Terraform to access to Azure using Azure workload identity. Each Terraform workspace tracks a repository branch and uses a unique Azure Entra ID service principal.
 
+## HCP Terraform Details
 
-| Organization | Project | Workspace |
-|--------------|---------|-----------|
-| ${terraform_organization} | ${terraform_project} | ${terraform_workspace} |
+All HCP Terraform workspaces are configured in the following HCP Terraform organization: ${hcptf_org}
 
-Clone this repository and run the following to verify Azure connectivity using Terraform Workload Identity:
+### Production
+
+| HCP Terraform Project | HCP Terraform Workspace |
+|-----------------------|-------------------------|
+| ${prod_project}       | ${prod_workspace}       |
+
+This repository and branch [main] can be cloned with the following commands:
+
+| Clone Protocol | Syntax |
+|----------------|--------|
+| HTTPS | git clone ${repo_clone_http} |
+| SSH | git clone ${repo_clone_ssh} |
+| GitHub CLI | gh repo clone ${repo_name} |
+
+### Staging
+
+| HCP Terraform Project | HCP Terraform Workspace |
+|-----------------------|-------------------------|
+| ${stage_project}      | ${stage_workspace}      |
+
+This repository and branch [stage] can be cloned with the following commands:
+
+| Clone Protocol | Syntax |
+|----------------|--------|
+| HTTPS | git clone -b stage ${repo_clone_http} |
+| SSH | git clone -b stage ${repo_clone_ssh} |
+| GitHub CLI | gh repo clone ${repo_name} -- --branch stage |
+
+### Development
+
+| HCP Terraform Project | HCP Terraform Workspace |
+|-----------------------|-------------------------|
+| ${dev_project}        | ${dev_workspace}        |
+
+This repository and branch [dev] can be cloned with the following commands:
+
+| Clone Protocol | Syntax |
+|----------------|--------|
+| HTTPS | git clone -b dev ${repo_clone_http} |
+| SSH | git clone -b dev ${repo_clone_ssh} |
+| GitHub CLI | gh repo clone ${repo_name} -- --branch dev |
+
+Baseline project content runs a confirmation that Azure dynamic credentials using Workload Identity are properly configured.
+
+Run the following command(s) in the repository folder after cloning:
 
 ```
-terraform init 
-terraform plan 
-terraform apply
+terraform init
+terraform plan
 ```

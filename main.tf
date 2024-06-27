@@ -21,30 +21,28 @@ data "vault_generic_secret" "terraform" {
 GitHub
 **********************/
 
-# Resource(s): GitHub Repo(s)
+# Resource(s): GitHub Repo
 resource "github_repository" "this" {
   name = "project-${var.project_name}"
 
   visibility = "private"
 
   template {
-    owner                = "kevin-loehfelm"
-    repository           = "template-demo-workspace"
-    include_all_branches = true
+    owner      = "kevin-loehfelm"
+    repository = "template-demo-project"
   }
 }
 
 # Resource(s): GitHub Repo initial configuration: terraform.tf
 resource "github_repository_file" "configuration" {
-  for_each   = toset(local.environments)
   repository = github_repository.this.name
-  branch     = each.key == "prod" ? "main" : each.key
+  branch     = "main"
   file       = "terraform.tf"
   content = templatefile("${path.module}/github_terraform_tf.tftpl",
     {
       terraform_organization : data.tfe_organization.this.name,
-      terraform_project   = data.tfe_project.this[each.key].name,
-      terraform_workspace = tfe_workspace.this[each.key].name
+      #terraform_project   = data.tfe_project.this.name,
+      project_name = var.project_name
     }
   )
   commit_message      = "Configuration: terraform.tf"
@@ -55,23 +53,45 @@ resource "github_repository_file" "configuration" {
 
 # Resource(s): GitHub Repo initial configuration: README.md
 resource "github_repository_file" "readme" {
-  for_each   = toset(local.environments)
   repository = github_repository.this.name
-  branch     = each.key == "prod" ? "main" : each.key
   file       = "README.md"
   content = templatefile("${path.module}/github_readme_md.tftpl",
     {
       project_name = var.project_name
-      environment  = each.key
-      terraform_organization : data.tfe_organization.this.name
-      terraform_project   = data.tfe_project.this[each.key].name
-      terraform_workspace = tfe_workspace.this[each.key].name
+      hcptf_org : data.tfe_organization.this.name
+      prod_project    = data.tfe_project.this["prod"].name
+      prod_workspace  = local.workspaces.prod
+      dev_project     = data.tfe_project.this["dev"].name
+      dev_workspace   = local.workspaces.dev
+      stage_project   = data.tfe_project.this["stage"].name
+      stage_workspace = local.workspaces.stage
+      repo_name       = github_repository.this.full_name
+      repo_clone_http = github_repository.this.http_clone_url
+      repo_clone_ssh  = github_repository.this.ssh_clone_url
     }
   )
   commit_message      = "Configuration: README.md"
   commit_author       = "TFE Onboarding"
   commit_email        = "terraform@example.com"
   overwrite_on_create = true
+}
+
+resource "github_branch" "stage" {
+  depends_on = [
+    github_repository_file.configuration,
+    github_repository_file.readme
+  ]
+  repository = github_repository.this.name
+  branch     = "stage"
+}
+
+resource "github_branch" "dev" {
+  depends_on = [
+    github_repository_file.configuration,
+    github_repository_file.readme
+  ]
+  repository = github_repository.this.name
+  branch     = "dev"
 }
 
 /**********************
@@ -89,7 +109,7 @@ data "azuread_service_principal" "msgraph" {
 
 # Resource(s): Azure Application for Terraform Workload Identity
 resource "azuread_application" "this" {
-  for_each     = toset(local.environments)
+  for_each     = local.workspaces
   display_name = "project-${each.key}-${var.project_name}"
   description  = "Service Principal for Terraform Workload Identity"
 
@@ -105,14 +125,14 @@ resource "azuread_application" "this" {
 
 # Resource(s): Azure Service Principal for Terraform Workload Identity
 resource "azuread_service_principal" "this" {
-  for_each  = toset(local.environments)
+  for_each  = local.workspaces
   client_id = azuread_application.this[each.key].client_id
   owners    = [data.azuread_client_config.current.object_id]
 }
 
 # Resource(s): Grant Admin Privileges for Application.Read.All Service Principal permission
 resource "azuread_app_role_assignment" "read_all" {
-  for_each            = toset(local.environments)
+  for_each            = local.workspaces
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Application.Read.All"]
   principal_object_id = azuread_service_principal.this[each.key].object_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
@@ -120,7 +140,7 @@ resource "azuread_app_role_assignment" "read_all" {
 
 # Resource(s): Federated Identity for workspace PLAN operations
 resource "azuread_application_federated_identity_credential" "plan" {
-  for_each       = toset(local.environments)
+  for_each       = local.workspaces
   application_id = azuread_application.this[each.key].id
   display_name   = "${each.key}-${var.project_name}-plan"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} PLAN"
@@ -131,7 +151,7 @@ resource "azuread_application_federated_identity_credential" "plan" {
 
 # Resource(s): Federated Identity for workspace APPLY operations
 resource "azuread_application_federated_identity_credential" "apply" {
-  for_each       = toset(local.environments)
+  for_each       = local.workspaces
   application_id = azuread_application.this[each.key].id
   display_name   = "${each.key}-${var.project_name}-apply"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} APPLY"
@@ -151,7 +171,7 @@ data "tfe_organization" "this" {
 
 # Data Source(s): Terraform Project(s)
 data "tfe_project" "this" {
-  for_each     = toset(local.environments)
+  for_each     = local.workspaces
   organization = data.tfe_organization.this.name
   name         = "${var.prefix}-${each.key}"
 }
@@ -164,25 +184,31 @@ data "tfe_oauth_client" "this" {
 
 # Resource(s): Terraform Workspace(s)
 resource "tfe_workspace" "this" {
-  for_each       = toset(local.environments)
-  name           = "${each.key}-${var.project_name}"
+  for_each       = local.workspaces
+  name           = each.value
   organization   = data.tfe_organization.this.name
   project_id     = data.tfe_project.this[each.key].id
   queue_all_runs = false
   tag_names = [
-    "azure",
-    "${each.key}"
+    "platform:azure",
+    "env:${each.key}",
+    "project:${var.project_name}"
   ]
   vcs_repo {
     branch         = each.key == "prod" ? "main" : each.key
     identifier     = github_repository.this.full_name
     oauth_token_id = data.tfe_oauth_client.this.oauth_token_id
   }
+  depends_on = [
+    github_repository.this,
+    github_branch.stage,
+    github_branch.dev
+  ]
 }
 
 # Resource(s): Terraform Workspace Variable TFC_AZURE_PROVIDER_AUTH
 resource "tfe_variable" "tfc_azure_provider_auth" {
-  for_each     = toset(local.environments)
+  for_each     = local.workspaces
   key          = "TFC_AZURE_PROVIDER_AUTH"
   value        = true
   category     = "env"
@@ -192,7 +218,7 @@ resource "tfe_variable" "tfc_azure_provider_auth" {
 
 # Resource(s): Terraform Workspace Variable TFC_AZURE_RUN_CLIENT_ID
 resource "tfe_variable" "tfc_azure_run_client_id" {
-  for_each     = toset(local.environments)
+  for_each     = local.workspaces
   key          = "TFC_AZURE_RUN_CLIENT_ID"
   value        = azuread_application.this[each.key].client_id
   category     = "env"
@@ -202,7 +228,7 @@ resource "tfe_variable" "tfc_azure_run_client_id" {
 
 # Resource(s): Terraform Workspace Variable ARM_TENANT_ID
 resource "tfe_variable" "arm_tenant_id" {
-  for_each     = toset(local.environments)
+  for_each     = local.workspaces
   key          = "ARM_TENANT_ID"
   value        = var.azure_tenant_id
   category     = "env"
