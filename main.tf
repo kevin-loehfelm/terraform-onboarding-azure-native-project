@@ -110,7 +110,7 @@ data "azuread_service_principal" "msgraph" {
 # Resource(s): Azure Application for Terraform Workload Identity
 resource "azuread_application" "this" {
   for_each     = local.workspaces
-  display_name = "project-${each.key}-${var.project_name}"
+  display_name = "project-${var.project_name}-${each.key}"
   description  = "Service Principal for Terraform Workload Identity"
 
   required_resource_access {
@@ -142,7 +142,7 @@ resource "azuread_app_role_assignment" "read_all" {
 resource "azuread_application_federated_identity_credential" "plan" {
   for_each       = local.workspaces
   application_id = azuread_application.this[each.key].id
-  display_name   = "${each.key}-${var.project_name}-plan"
+  display_name   = "project-${var.project_name}-${each.key}-plan"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} PLAN"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://app.terraform.io"
@@ -153,7 +153,7 @@ resource "azuread_application_federated_identity_credential" "plan" {
 resource "azuread_application_federated_identity_credential" "apply" {
   for_each       = local.workspaces
   application_id = azuread_application.this[each.key].id
-  display_name   = "${each.key}-${var.project_name}-apply"
+  display_name   = "project-${var.project_name}-${each.key}-apply"
   description    = "Federated Identity: ${tfe_workspace.this[each.key].name} APPLY"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://app.terraform.io"
