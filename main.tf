@@ -28,8 +28,8 @@ resource "github_repository" "this" {
   visibility = "private"
 
   template {
-    owner      = "kevin-loehfelm"
-    repository = "template-demo-project"
+    owner      = local.github_owner
+    repository = local.template_repository
   }
 }
 
@@ -41,7 +41,6 @@ resource "github_repository_file" "configuration" {
   content = templatefile("${path.module}/github_terraform_tf.tftpl",
     {
       terraform_organization : data.tfe_organization.this.name,
-      #terraform_project   = data.tfe_project.this.name,
       project_name = var.project_name
     }
   )

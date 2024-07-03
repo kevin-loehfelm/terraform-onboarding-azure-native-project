@@ -39,3 +39,10 @@ variable "terraform_organization" {
   description = "hcp terraform organization"
   default     = "kloehfelm-demo"
 }
+
+# Variable(s): GitHub Template Repository
+variable "github_template_repo" {
+  type        = string
+  description = "project template repository"
+  default     = "kevin-loehfelm/template-azure-native-project"
+}
