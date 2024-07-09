@@ -1,19 +1,19 @@
 # ${project_name}
 
-This VCS repository is configured with HCP Terraform to access to Azure using Azure workload identity. Each Terraform workspace tracks a repository branch and uses a unique Azure Entra ID service principal.
+Each branch of this repository is associated with an HCP Terraform workspace. Each HCP Terraform workspace is configured to retrieve Azure dynamic credentials, valid for the length of the plan or apply, [directly from Azure](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/azure-configuration).
 
 ## HCP Terraform Details
 
 All HCP Terraform workspaces are configured in the following HCP Terraform organization: ${hcptf_org}
 
-
-### Production
+## Production
+### Terraform Project & Workspace
 
 | HCP Terraform Project | HCP Terraform Workspace |
 |-----------------------|-------------------------|
 | ${prod_project}       | ${prod_workspace}       |
 
-This repository and branch [main] can be cloned with the following commands:
+### Clone a local copy [main]
 
 | Clone Protocol | Syntax |
 |----------------|--------|
@@ -21,15 +21,14 @@ This repository and branch [main] can be cloned with the following commands:
 | SSH | git clone ${repo_clone_ssh} |
 | GitHub CLI | gh repo clone ${repo_name} |
 
-
-### Staging
+## Staging
+### Terraform Project & Workspace
 
 | HCP Terraform Project | HCP Terraform Workspace |
 |-----------------------|-------------------------|
 | ${stage_project}      | ${stage_workspace}      |
 
-
-This repository and branch [stage] can be cloned with the following commands:
+### Clone a local copy [stage]
 
 | Clone Protocol | Syntax |
 |----------------|--------|
@@ -37,15 +36,14 @@ This repository and branch [stage] can be cloned with the following commands:
 | SSH | git clone -b stage ${repo_clone_ssh} |
 | GitHub CLI | gh repo clone ${repo_name} -- --branch stage |
 
-### Development
-
+## Development
+### Terraform Project & Workspace
 
 | HCP Terraform Project | HCP Terraform Workspace |
 |-----------------------|-------------------------|
 | ${dev_project}        | ${dev_workspace}        |
 
-
-This repository and branch [dev] can be cloned with the following commands:
+### Clone a local copy [dev]
 
 | Clone Protocol | Syntax |
 |----------------|--------|
@@ -53,10 +51,9 @@ This repository and branch [dev] can be cloned with the following commands:
 | SSH | git clone -b dev ${repo_clone_ssh} |
 | GitHub CLI | gh repo clone ${repo_name} -- --branch dev |
 
+## ⚡️ Quickstart
 
-Baseline project content runs a confirmation that Azure dynamic credentials using Workload Identity are properly configured.
-
-Run the following command(s) in the repository folder after cloning:
+Run the following command(s) in the repository folder after cloning to verify dynamic credentials are working as expected.
 
 ```
 terraform init
