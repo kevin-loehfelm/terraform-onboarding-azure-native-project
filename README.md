@@ -6,8 +6,8 @@ This module deploys resources to support VCS-driven Azure Infrastructure Automat
 
 | Resource Type | Resource | Description |
 |---------------|----------|-------------|
-| Azure Service Prinicipal | project-\<project_name\>-prod | Azure Service Prinicipal for access to the Azure Production environment |
-| Azure Service Prinicipal | project-<<project_name>>-stage | Azure Service Prinicipal for access to the Azure Staging environment |
+| Azure Service Prinicipal | project-\<project_name\\>-prod | Azure Service Prinicipal for access to the Azure Production environment |
+| Azure Service Prinicipal | project-<< project_name >>-stage | Azure Service Prinicipal for access to the Azure Staging environment |
 | Azure Service Prinicipal | project-"<project_name>"-dev | Azure Service Prinicipal for access to the Azure Development environment |
 
 ## GitHub
