@@ -1,4 +1,4 @@
-# Provider(s): AzureAD Provider
+# Provider(s): Azure Entra ID (Active Directory)
 provider "azuread" {
   use_cli                 = false
   use_oidc                = true
@@ -7,12 +7,12 @@ provider "azuread" {
   tenant_id               = var.azure_tenant_id
 }
 
-# Provider(s): GitHub Provider
+# Provider(s): GitHub
 provider "github" {
   token = data.vault_kv_secret_v2.github.data["token"]
 }
 
-# Provider(s): HCP Terraform/Terraform Enterprise Provider
+# Provider(s): HCP Terraform/Terraform Enterprise
 provider "tfe" {
   token = data.vault_kv_secret_v2.terraform.data["token"]
   # TODO: token = data.vault_generic_secret.terraform.data["token"]
