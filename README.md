@@ -1,7 +1,7 @@
 <!-- BEGIN_AUTOMATED_TF_DOCS_BLOCK -->
 # Azure Federated Identity
 
-This module deploy resources to support VCS-driven Azure Infrastructure Automation using dynamic credentials.
+This module deploy resources to support VCS-driven Azure Infrastructure Automation using dynamic credentials. Dynamic credentials are delivered directly by Azure to HCP Terraform.
 
 ## GitHub
 
